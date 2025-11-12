@@ -1,3 +1,43 @@
+# hessian이 나쁘게 나올 수도 있으므로, 백트래킹 라인 서치를 도입해야 될 수도 있음
+import numpy as np 
+
+def f(x): 
+    return (x[0]+ 10*x[1])**2 + 5*(x[2]-x[3])**2 + (x[1]-2*x[2])**4 + 10*(x[0]-x[3])**4
+
+def grad_f(x): 
+    return np.array ([2*(x[0] + 10 * x[1]) + 40 * (x[0] - x[3]) ** 3, 20*(x[0] + 10*x[1]) + 4 * (x[1] - 2*x[2]) ** 3, 10*(x[2]-x[3]) - 8*(x[1]-2*x[2])**3,  -10 * (x[2] - x[3]) - 40 * (x[0]-x[3])**3])
+
+def hess_f(x): 
+    return np.array([[2+120*(x[0]-x[3])**2, 20, 0, -120*(x[0]-x[3])**2],
+                     [20, 200+12*(x[1]-2*x[2])**2, -24*(x[1]-2*x[2])**2, 0], 
+                     [0, -24*(x[1]-2*x[2])**2, 10+48*(x[1]-2*x[2])**2, -10], 
+                     [-120*(x[0]-x[3])**2, 0, -10, 10+120*(x[0]-x[3])**2]
+                     ])
+
+def newton_method_multivar(x0, tol=1e-10, max_iter=50):
+    x = x0.astype(float) 
+    for i in range(max_iter): 
+        grad = grad_f(x) 
+        hess = hess_f(x) 
+        #x_new = x - np.linalg.inv(hess) @ grad #뉴턴 업데이트 k+1번째 x = k번째 x - k번째 헤시안 분의 f(x_k)
+        x_new = x - np.linalg.solve(hess, grad) #-> 수치 안정성/ 성능이 더 좋음
+        #s = np.linalg.solve(hess, grad) #헤시안 역행렬과 그래디언트의 곱을 s에 넣는 것
+        
+        #if np.linalg.norm(x_new - x) < tol: #x_new와 x의 차이가 tol보다 작으면 수렴
+        if np.linalg.norm(grad) < tol: #그래디언트의 크기가 tol보다 작으면 수렴
+            print(f"Converged in {i+1} iterations.") 
+            return x_new 
+        x = x_new 
+    print("Did not converge.")  
+    return x        
+        
+x_star = newton_method_multivar(np.array([3.0, -1.0, 0.0, 1.0]))  #초기값이 무엇이든 x_1에서수렴함
+print("Minimizer:", x_star) #도출된 최소점과 그 위치에서의 함수값 출력
+print("Minimum value f(x*):", f(x_star)) #f(x*) = 0.0
+
+
+'''
+
 # hessian이 상수 PD, f가 정확한 이차형(quadratic)임
 # newton method -> 2차 근사를 사용 if 실제 함수가 2차면 2차 근사가 정확.
 # ==> 첫 스텝에서 꼭짓점(최소점)을 바로 찾아감.
@@ -51,3 +91,4 @@ def newton_method_multivar(x0, tol=1e-6, max_iter=50):
 x_star = newton_method_multivar(np.array([0.0, 0.0]))  #초기값이 무엇이든 x_1에서수렴함
 print("Minimizer:", x_star) #도출된 최소점과 그 위치에서의 함수값 출력
 print("Minimum value f(x*):", f(x_star)) #f(x*) = 0.0
+'''
